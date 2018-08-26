@@ -1,6 +1,41 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+In this project I implemented a model predictive controller (MPC) for steering and throttle of a car to follow known waypoints in a race track.
+The MPC utilizes optimization methods to calculate an optimal control sequence to reach our control objective (path following) considering the limitations of our car, that is takes the model into account to predict the outcome of the control sequence and use that to further produce control signals. 
+An additional challenge in this project is the presence of a 100ms delay between the calculation of a control input and the execution of it (which simulates real-world scenario where actuation is not instantaneous).
+
+[//]: # (Image References)
+[model]:   ./model.png
+
+## The Model
+The model considered for the car is based on the bycicle model, where the car is approximated to a bycicle (that is one front wheel and one back wheel), no skidding, and limited turning rate.
+The model implemented in the project is the following:
+
+![alt text][success]
+
+Where our state vector is ```x, y, psi, v, cte, epsi``` that are the vehicle position (x, y), heading (psi), longitudinal velocity (v), the cross track error (difference between the position of our vehicle and the path to be followed), and the heading error (epsi).
+
+## Timestep Length and Elapsed Duration (N & dt)
+
+For simplicity, the duration between timestep was selected to be 100 milliseconds, matching the actuator delay. This may be a bit too slow in real situations where control algorithm may run with a timestamp of 20 milliseconds, but it proved to produce good results and was not tweaked further.
+The timestep length N was selected to be 10, that is our prediction horizon would be of 1 second.
+
+## Polynomial Fitting and MPC Preprocessing
+
+A third order polynomial is fitted to waypoints, 3rd order polynomials can represent many common trajectories and it was used to fit the desired trajectory as well.
+Since all the coordinates in the system are represented in map coordinates (global), I've decided to convert all the cooridnates (waypoints and vehicle), to the car's reference frame. This can be seen for example in lines ```120``` to ```125``` in ```main.cpp```.
+This conversion makes the following steps simpler to understand, as the velocity is longitudinal the car heading on the x axis and a 0 desired heading means that the heading is following the path correctly.
+
+## Model Predictive Control with Latency
+
+In order to cope with the 100ms latency, I've decided to pass to the MPC controller not the current state, but a predicted state based on the current state. 
+In essence, knowing the current state and controls of our car, it is possible to predict where it would be 100ms later, so that the MPC optimizator will return control values that are useful 100ms in the future, so that by the time these values are used, they are exactly (or, within our best guess) what the car needs to follow the path. This can be observed in lines  ```137``` to ```150``` in ```main.cpp```.
+The weights selected in the MPC optimization reflect our control desires.
+In fact the minimization of cross-track error and heading error have a very high weight, also, we don't want the car to sway much suddenly from left to right so I selected a modest weight for sequential steering controls. Changes in acceleration and magnitude of steering have a low weight so the controller has more freedom on those, and limits on actuators help in not providing unreasonable controls to the car.
+
+The controller was tested in the provided simulator with very good results even at high speed (60mph) with the car successfully follow the path without steering off track, and braking whenever turns are too sharp for the car to follow them at high speed.
+
 ---
 
 ## Dependencies

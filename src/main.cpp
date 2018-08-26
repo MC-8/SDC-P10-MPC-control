@@ -124,7 +124,6 @@ int main() {
           waypoints_y[i]= (dx * sin(-psi) + dy * cos(-psi));
         }
 
-
          Eigen::VectorXd coeffs = polyfit(waypoints_x, waypoints_y, 3);
          double cte = polyeval(coeffs, 0);
          double epsi = - atan(coeffs[1]);
